@@ -1,11 +1,11 @@
 use std::collections::VecDeque;
 
 #[derive(Debug, Clone, Ord, PartialOrd, Eq, PartialEq)]
-pub struct Queue<T: Clone + Default> {
+pub struct Queue<T: Clone> {
     items: VecDeque<T>,
 }
 
-impl<T: Clone + Default> Queue<T> {
+impl<T: Clone> Queue<T> {
     pub fn new() -> Queue<T> {
         Queue { items: VecDeque::new() }
     }
@@ -38,7 +38,7 @@ impl<T: Clone + Default> Queue<T> {
     }
 }
 
-impl<T: Clone + Default> Default for Queue<T> {
+impl<T: Clone> Default for Queue<T> {
     fn default() -> Queue<T> {
         Queue::<T>::new()
     }
