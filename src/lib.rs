@@ -1,12 +1,12 @@
 use std::collections::VecDeque;
 
 #[derive(Debug, Clone, Ord, PartialOrd, Eq, PartialEq)]
-pub struct Queue<T: Clone> {
+pub struct Queue<T: Clone + Default> {
     items: VecDeque<T>,
     capacity: Option<usize>,
 }
 
-impl<T: Clone> Queue<T> {
+impl<T: Clone + Default> Queue<T> {
     pub fn new() -> Queue<T> {
         Queue { items: VecDeque::new(), capacity: None }
     }
@@ -20,7 +20,7 @@ impl<T: Clone> Queue<T> {
             self.items.push_back(item);
             Ok(None)
         } else {
-            Err(format!("The queue is full, limit: {} size: {}",
+            Err(format!("The queue is full, capacity: {} size: {}",
                         self.capacity(),
                         self.size()))
         }
@@ -35,13 +35,13 @@ impl<T: Clone> Queue<T> {
         }
     }
 
-    pub fn set_limit(&mut self, limit: usize) -> Result<Option<T>, String> {
+    pub fn resize_cap(&mut self, limit: usize) -> Result<Option<T>, String> {
         if self.size() <= limit {
             self.capacity = Some(limit);
-            self.items.resize_with(limit, || unreachable!());
+            self.items.resize_with(limit, Default::default);
             Ok(None)
         } else {
-            Err(format!("Limit cannot be smaller than size, new_limit: {} size: {}",
+            Err(format!("Cap cannot be smaller than size, new_cap: {} size: {}",
                         limit,
                         self.size()))
         }
@@ -49,7 +49,7 @@ impl<T: Clone> Queue<T> {
 
     pub fn remove_cap(&mut self) {
         self.capacity = None;
-        self.items.resize_with(usize::max_value(), || unreachable!());
+        self.items.resize_with(usize::max_value(), Default::default);
     }
 
     pub fn size(&self) -> usize {
@@ -57,7 +57,7 @@ impl<T: Clone> Queue<T> {
     }
 }
 
-impl<T: Clone> Default for Queue<T> {
+impl<T: Clone + Default> Default for Queue<T> {
     fn default() -> Queue<T> {
         Queue::<T>::new()
     }
@@ -105,10 +105,28 @@ mod tests {
         assert_eq!(queue.add(1), Ok(None));
         assert_eq!(queue.add(2), Ok(None));
         assert_eq!(queue.add(3), Ok(None));
-        let err = format!("The queue is full, limit: {} size: {}",
+        let err = format!("The queue is full, capacity: {} size: {}",
                           queue.capacity(),
                           queue.size());
         assert_eq!(queue.add(4), Err(err));
+    }
+
+    #[test]
+    fn test_resize() {
+        let mut queue: Queue<i32> = Queue::with_cap(3);
+        assert_eq!(queue.add(1), Ok(None));
+        assert_eq!(queue.add(2), Ok(None));
+        assert_eq!(queue.add(3), Ok(None));
+        let err = format!("The queue is full, capacity: {} size: {}",
+                          queue.capacity(),
+                          queue.size());
+        assert_eq!(queue.add(4), Err(err));
+        queue.resize_cap(6);
+        assert_eq!(queue.capacity(), 6);
+        assert_eq!(queue.capacity(), queue.size());
+        queue.resize_cap(3);
+        assert_eq!(queue.capacity(), 6);
+        assert_eq!(queue.capacity(), queue.size());
     }
 
     #[test]
