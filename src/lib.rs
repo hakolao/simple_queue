@@ -25,7 +25,9 @@ impl<T: Clone + Default> Queue<T> {
         }
     }
 
-    // pub fn deque(&mut self) -> Result<Option<T>, String> {}
+    pub fn deque(&mut self) -> Option<T> {
+        self.items.pop_front()
+    }
 
     pub fn capacity(&self) -> usize {
         self.items.capacity()
@@ -82,13 +84,25 @@ mod tests {
     #[test]
     fn test_size() {
         let mut queue: Queue<i32> = Queue::with_cap(3);
-        queue.add(1).expect("Ok");
+        queue.add(1).expect("Adding to queue");
         assert_eq!(queue.size(), 1);
-        queue.add(1).expect("Ok");
+        queue.add(1).expect("Adding to queue");
         assert_eq!(queue.size(), 2);
-        queue.add(1).expect("Ok");
+        queue.add(1).expect("Adding to queue");
         assert_eq!(queue.size(), 3);
         assert!(queue.add(1).is_err());
         assert_eq!(queue.capacity(), queue.size());
+    }
+
+    #[test]
+    fn test_deque() {
+        let mut queue: Queue<i32> = Queue::new();
+        assert_eq!(queue.size(), 0);
+        queue.add(5).expect("Adding to queue");
+        queue.add(45).expect("Adding to queue");
+        assert_eq!(queue.size(), 2);
+        assert_eq!(queue.deque(), Some(5));
+        assert_eq!(queue.deque(), Some(45));
+        assert_eq!(queue.size(), 0);
     }
 }
