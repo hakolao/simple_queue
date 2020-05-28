@@ -10,14 +10,22 @@ impl<T: Clone> Queue<T> {
         Queue { items: VecDeque::new() }
     }
 
+    pub fn from_vec(vec: Vec<T>) -> Queue<T> {
+        Queue { items: VecDeque::from(vec) }
+    }
+
+    pub fn items(&self) -> &VecDeque<T> {
+        &self.items
+    }
+
     pub fn with_cap(cap: usize) -> Queue<T> {
         Queue { items: VecDeque::with_capacity(cap) }
     }
 
-    pub fn add(&mut self, item: T) -> Result<Option<T>, String> {
+    pub fn add(&mut self, item: T) -> Result<Option<&T>, String> {
         if self.size() < self.capacity() {
             self.items.push_back(item);
-            Ok(None)
+            Ok(self.items.back())
         } else {
             Err(format!("The queue is full, capacity: {} size: {}",
                         self.capacity(),
@@ -54,9 +62,7 @@ macro_rules! queue {
     ($($x:expr),+) => {
         {
             let mut queue = Queue::default();
-            $(
-                let _ = queue.add($x);
-            )*
+            $(queue.add($x).expect("");)*
             queue
         }
     };
@@ -86,7 +92,8 @@ mod tests {
     #[test]
     fn test_add() {
         let mut queue: Queue<i32> = Queue::new();
-        assert_eq!(queue.add(3), Ok(None));
+        assert_eq!(queue.add(3), Ok(Some(&3)));
+        assert_eq!(queue.add(5), Ok(Some(&5)));
     }
 
     #[test]
@@ -133,5 +140,11 @@ mod tests {
         assert_eq!(queue.get(1), Some(&2));
         let queue2 = queue![1, 2, 3, 4];
         assert_eq!(queue2.get(3), Some(&4));
+    }
+
+    #[test]
+    fn test_from_vec() {
+        let queue = Queue::from_vec(vec![1, 2, 3]);
+        assert_eq!(queue.items, VecDeque::from(vec![1, 2, 3]));
     }
 }
