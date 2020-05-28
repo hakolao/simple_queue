@@ -36,6 +36,10 @@ impl<T: Clone> Queue<T> {
     pub fn size(&self) -> usize {
         self.items.len()
     }
+
+    pub fn get(&self, index: usize) -> Option<&T> {
+        self.items.get(index)
+    }
 }
 
 impl<T: Clone> Default for Queue<T> {
@@ -44,6 +48,19 @@ impl<T: Clone> Default for Queue<T> {
     }
 }
 
+#[macro_export]
+macro_rules! queue {
+    () => { Queue::new() };
+    ($($x:expr),+) => {
+        {
+            let mut queue = Queue::default();
+            $(
+                let _ = queue.add($x);
+            )*
+            queue
+        }
+    };
+}
 
 #[cfg(test)]
 mod tests {
@@ -77,8 +94,9 @@ mod tests {
         let mut queue: Queue<i32> = Queue::with_cap(3);
         assert!(queue.add(1).is_ok());
         assert!(queue.add(1).is_ok());
-        assert!(queue.add(1).is_ok());
+        assert!(queue.add(3).is_ok());
         assert!(queue.add(4).is_err());
+        assert_eq!(queue.get(2), Some(&3));
     }
 
     #[test]
@@ -104,5 +122,16 @@ mod tests {
         assert_eq!(queue.deque(), Some(5));
         assert_eq!(queue.deque(), Some(45));
         assert_eq!(queue.size(), 0);
+    }
+
+    #[test]
+    fn test_macro() {
+        let mut queue = queue![];
+        queue.add(1).expect("Adding to queue");
+        queue.add(2).expect("Adding to queue");
+        assert_eq!(queue.get(0), Some(&1));
+        assert_eq!(queue.get(1), Some(&2));
+        let queue2 = queue![1, 2, 3, 4];
+        assert_eq!(queue2.get(3), Some(&4));
     }
 }
