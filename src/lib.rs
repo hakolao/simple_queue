@@ -1,39 +1,44 @@
+use std::collections::VecDeque;
+
 #[derive(Debug, Clone, Ord, PartialOrd, Eq, PartialEq)]
 pub struct Queue<T: Clone> {
-    items: Vec<T>,
-    limit: Option<usize>,
+    items: VecDeque<T>,
+    capacity: Option<usize>,
 }
 
 impl<T: Clone> Queue<T> {
     pub fn new() -> Queue<T> {
-        Queue { items: vec![], limit: None }
+        Queue { items: VecDeque::new(), capacity: None }
     }
 
-    pub fn new_limited(limit: Option<usize>) -> Queue<T> {
-        Queue { items: vec![], limit }
+    pub fn with_cap(limit: usize) -> Queue<T> {
+        Queue { items: VecDeque::with_capacity(limit), capacity: Some(limit) }
     }
 
     pub fn add(&mut self, item: T) -> Result<Option<T>, String> {
-        if self.size() < self.limit() {
-            self.items.push(item);
+        if self.size() < self.capacity() {
+            self.items.push_back(item);
             Ok(None)
         } else {
             Err(format!("The queue is full, limit: {} size: {}",
-                        self.limit(),
+                        self.capacity(),
                         self.size()))
         }
     }
 
-    pub fn limit(&self) -> usize {
-        match self.limit {
-            Some(limit) => limit,
+    // pub fn deque(&mut self) -> Result<Option<T>, String> {}
+
+    pub fn capacity(&self) -> usize {
+        match self.capacity {
+            Some(cap) => cap,
             None => usize::max_value()
         }
     }
 
     pub fn set_limit(&mut self, limit: usize) -> Result<Option<T>, String> {
         if self.size() <= limit {
-            self.limit = Some(limit);
+            self.capacity = Some(limit);
+            self.items.resize_with(limit, || unreachable!());
             Ok(None)
         } else {
             Err(format!("Limit cannot be smaller than size, new_limit: {} size: {}",
@@ -42,8 +47,9 @@ impl<T: Clone> Queue<T> {
         }
     }
 
-    pub fn remove_limit(&mut self) {
-        self.limit = None;
+    pub fn remove_cap(&mut self) {
+        self.capacity = None;
+        self.items.resize_with(usize::max_value(), || unreachable!());
     }
 
     pub fn size(&self) -> usize {
@@ -61,29 +67,30 @@ impl<T: Clone> Default for Queue<T> {
 #[cfg(test)]
 mod tests {
     use crate::{Queue};
+    use std::collections::VecDeque;
 
     #[test]
     fn test_new() {
-        assert_eq!(Queue::<i32>::new(), Queue { items: vec![], limit: None });
+        assert_eq!(Queue::<i32>::new(), Queue { items: VecDeque::new(), capacity: None });
     }
 
     #[test]
     fn test_default() {
-        assert_eq!(Queue::<i32>::default(), Queue { items: vec![], limit: None })
+        assert_eq!(Queue::<i32>::default(), Queue { items: VecDeque::new(), capacity: None })
     }
 
     #[test]
     fn test_new_limited() {
-        let queue = Queue::<i32>::new_limited(Some(5));
-        assert_eq!(queue, Queue { items: vec![], limit: Some(5) })
+        let queue = Queue::<i32>::with_cap(5);
+        assert_eq!(queue, Queue { items: VecDeque::new(), capacity: Some(5) })
     }
 
     #[test]
-    fn test_limit() {
-        let queue = Queue::<i32>::new_limited(Some(5));
-        assert_eq!(queue.limit(), 5);
+    fn test_capacity() {
+        let queue = Queue::<i32>::with_cap(5);
+        assert_eq!(queue.capacity(), 5);
         let queue2 = Queue::<i32>::new();
-        assert_eq!(queue2.limit(), usize::max_value());
+        assert_eq!(queue2.capacity(), usize::max_value());
     }
 
     #[test]
@@ -93,13 +100,13 @@ mod tests {
     }
 
     #[test]
-    fn test_add_with_limit() {
-        let mut queue: Queue<i32> = Queue::new_limited(Some(3));
+    fn test_add_with_capacity() {
+        let mut queue: Queue<i32> = Queue::with_cap(3);
         assert_eq!(queue.add(1), Ok(None));
         assert_eq!(queue.add(2), Ok(None));
         assert_eq!(queue.add(3), Ok(None));
         let err = format!("The queue is full, limit: {} size: {}",
-                          queue.limit(),
+                          queue.capacity(),
                           queue.size());
         assert_eq!(queue.add(4), Err(err));
     }
